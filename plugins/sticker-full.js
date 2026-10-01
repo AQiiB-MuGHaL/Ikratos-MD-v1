@@ -1,6 +1,5 @@
 import fetch from 'node-fetch'
-import { addExif } from '../lib/sticker.js'
-import { Sticker } from 'wa-sticker-formatter'
+import { sticker, addExif } from '../lib/sticker.js'
 
 let handler = async (m, { conn, args, usedPrefix, command }) => {
 	let stiker = false
@@ -38,13 +37,7 @@ export default handler
 const isUrl = (text) => text.match(new RegExp(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&/=]*)(jpe?g|gif|png)/, 'gi'))
 
 async function createSticker(img, url, packName, authorName, quality) {
-	let stickerMetadata = {
-		type: 'full',
-		pack: packName,
-		author: authorName,
-		quality
-	}
-	return (new Sticker(img ? img : url, stickerMetadata)).toBuffer()
+	return await sticker(img, url, packName, authorName)
 }
 
 async function mp4ToWebp(file, stickerMetadata) {

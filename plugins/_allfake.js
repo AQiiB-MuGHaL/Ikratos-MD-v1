@@ -5,7 +5,6 @@ import fs from 'fs'
 import fetch from 'node-fetch'
 import axios from 'axios'
 import moment from 'moment-timezone'
-import knights from 'knights-canvas'
 
 let handler = m => m
 handler.all = async function (m) {
@@ -51,8 +50,8 @@ handler.all = async function (m) {
         
 		// Ini untuk command crator/owner
 		global.kontak2 = [
-         [owner[0], await conn.getName(owner[0] + '@s.whatsapp.net'), ' ', 'bmclips001@gmail.com', true],
-         [owner[1], await conn.getName(owner[1] + '@s.whatsapp.net'), ' ', 'bmclips001@gmail.com', true], // Kalo mau di tambah tinggal copy 1baris ini di tempel di bawahnya trs di edit dikit!
+         [owner[0]?.[0], await conn.getName((owner[0]?.[0] || '') + '@s.whatsapp.net'), ' ', 'bmclips001@gmail.com', true],
+         [owner[1]?.[0] || owner[0]?.[0], await conn.getName((owner[1]?.[0] || owner[0]?.[0] || '') + '@s.whatsapp.net'), ' ', 'bmclips001@gmail.com', true], // Kalo mau di tambah tinggal copy 1baris ini di tempel di bawahnya trs di edit dikit!
         ]
         
 		// ucapan ini mah
@@ -73,7 +72,7 @@ handler.all = async function (m) {
 					mediaUrl: sgc,
 					description: wm3,
 					previewType: "PHOTO",
-					thumbnail: await (await fetch(pic)).buffer(),
+					thumbnail: fs.readFileSync('./thumbnail.jpg'),
 					sourceUrl: "https://github.com/xIKRATOSx"			
 				}
 			}
@@ -288,7 +287,7 @@ global.fakefb = {
                               }
                              }
                                       // Random Pick Fake
-                             let pft = [global.fimg, global.flocation, global.fimgv, global.fpayment, global.ftroli, global.fkontak, global.fvn, global.fvid, global.ftextt, global.fliveLoc, global.fliveLoc2, global.ftoko, global.fdocs, global.fgclink, global.fgif]
+                             let pft = [global.fimg, global.flocation, global.fimgv, global.fpayment, global.ftroli, global.fkontak, global.fvn, global.ftextt, global.fliveLoc, global.fliveLoc2, global.ftoko, global.fdocs, global.fgclink, global.fgif].filter(Boolean)
 			                   // Get Random
 		                     global.fakes = pft.getRandom()
 		        

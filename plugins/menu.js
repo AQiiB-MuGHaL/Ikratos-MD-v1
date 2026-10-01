@@ -338,6 +338,7 @@ const listMessage = {
     
     //FAKE TROLI
 
+    const thumbBuffer = fs.readFileSync('./thumbnail.jpg')
     const ftrol = {
     key : {
     remoteJid: 'status@broadcast',
@@ -350,47 +351,15 @@ const listMessage = {
     surface : 1,
     message: `Hai Sis ${name}!`, 
     orderTitle: `▮Menu ▸`,
-    thumbnail: await (await fetch(flaaa + 'Menu')).buffer(), //Gambarnye
+    thumbnail: thumbBuffer,
     sellerJid: '0@s.whatsapp.net' 
     }
     }
     }
     
-    const fload = {
-    key : {
-    remoteJid: 'status@broadcast',
-    participant : '0@s.whatsapp.net'
-    },
-    message: {
-    orderMessage: {
-    itemCount : 2022,
-    status: 1,
-    surface : 1,
-    message: '[❗] Loading Menu ' + '...\n Be patient Sis ^ω^', 
-    orderTitle: `▮Menu ▸`,
-    thumbnail: await (await fetch(flaaa + 'Loading')).buffer(), //Gambarnye
-    sellerJid: '0@s.whatsapp.net' 
-    }
-    }
-    }
     await conn.reply(m.chat, '*Wait a minute Sis. . .*', ftrol) 
     
     //------------------< MENU >----------------
-    
-    //------------------ SIMPLE
-    /*conn.reply(m.chat, text, fkon, { contextInfo: { mentionedJid: [m.sender],
-        externalAdReply: {
-            title: `${htjava} ${namebot}`,
-            body: titlebot,
-            description: titlebot,
-            mediaType: 2,
-          thumbnail: await(await fetch(thumb2)).buffer(),
-         mediaUrl: sig
-        }
-     }
-    })*/
-    
-    //------------------ DOCUMENT
     let d1 = 'application/vnd.openxmlformats-officedocument.presentationml.presentation'
     let d2 = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
     let d3  = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -398,105 +367,23 @@ const listMessage = {
     let d5 = 'application/vnd.android.package-archive'
     let d6 = 'application/zip'
     let td = `${pickRandom([d1,d2,d3,d4,d5,d6])}`
-    
-   //~~~Source : https://github.com/Rlxfly
-    //------- MENU LOCATION
-    const pre = generateWAMessageFromContent(m.chat, { liveLocationMessage:{
-  degreesLatitude: 34.672314,
-  degreesLongitude: 135.484802,
-  accuracyInMeters: 100,
-  speedInMps: 999,
-  degreesClockwiseFromMagneticNorth: 99,
-  caption: text.trim(),
-  sequenceNumber: 774236889,
-  timeOffset: 8600,
-  jpegThumbnail: await(await fetch(thumb)).buffer(),
-  contextInfo: { mentionedJid: [m.sender] }
-}}, { quoted: m
-					})
 
-//return conn.relayMessage(m.chat, pre.message, { messageId: pre.key.id })
-
-//-------DOC TEMPLATE
-    const message = { 
-            document: { url: thumbdoc },
-            jpegThumbnail: await (await fetch(urls)).buffer(),
-            fileName: wm,
-            mimetype: td,
-            fileLength: fsizedoc,
-            pageCount: fpagedoc,
-            caption: text,
-            footer: titlebot,
-            templateButtons: [
-                {
-                    urlButton: {
-                        displayText: `${namebot}`,
-                        url: 'https://github.com/ImYanXiao/Elaina-MultiDevice'
-                    }
-                },
-                {
-                    urlButton: {
-                        displayText: 'Instagram',
-                        url: sig
-                    }
-                },
-                {
-                    quickReplyButton: {
-                        displayText: 'Owner🎐',
-                        id: '.owner'
-                    }
-                },
-                {
-                    quickReplyButton: {
-                        displayText: 'Speed⚡',
-                        id: '.ping'
-                    }
-                },
-            ]
-        }
-       //await conn.sendMessage(m.chat, message, m, { mentionedJid: [m.sender] })
-        
-        //MAIN MENU
-      /*conn.sendButton(m.chat, `*${ucapan()}, ${name} 👋*`, text.trim(), await genProfile(conn, m), [['Speedtest', _p + 'speedtest'], ['Owner', _p + 'owner']], false, { quoted: fkon, contextInfo: { externalAdReply: { showAdAttribution: true,
-    mediaUrl: global.sig,
-    mediaType: "VIDEO",
-    description: global.sig, 
-    title: wm,
-    body: 'Here List Menu',
-    thumbnail: thumb,
-    sourceUrl: sgc
-}
-} })*/
-
-    //------------------- 2BUTTON VID
-   // conn.sendMessage(m.chat, { video: { url: 'https://telegra.ph/file/c82d5c358495e8ef15916.mp4' }, gifPlayback: true, gifAttribution: ~~(Math.random() * 2), caption: text.trim(), footer: 'ᴍᴀᴅᴇ ᴡɪᴛʜ ❤ ʙʏ ɪᴍ-ʏᴀɴxɪᴀᴏ', templateButtons: [{ quickReplyButton: { displayText: 'Speedtest⚡', id: `${_p}speedtest` }}, { quickReplyButton: { displayText: 'Owner🎀', id: `${_p}owner` }} ] })
-    
-    //------------------- Payment MENU
-    /*await conn.relayMessage(m.chat,  {
-    requestPaymentMessage: {
-      currencyCodeIso4217: 'USD',
-      amount1000: 50000000,
-      requestFrom: m.sender,
-      noteMessage: {
-      extendedTextMessage: {
-      text: text.trim(),
+    await conn.sendMessage(m.chat, {
+      image: thumbBuffer,
+      caption: text.trim(),
       contextInfo: {
-      externalAdReply: {
-      showAdAttribution: true
-      }}}}}}, {})*/
-      
-     //---Made By @ImYanXiao
-    // Mampus Di Enc 🧢
-    // Gausah Dihapus, Thx
-    //------------------ DOCUMENT WITH EXTERNALADS WITHOUT BUTTON
-    //---Versi 1
-    function _0x2daf(){const _0x4c1076=['namedoc','social','1017dFLzIP','11680bWFOeX','sendMessage','1FnTozH','6qNtNxK','445374chjKag','2096504ySppGm','627669MaFyqj','readFileSync','ʜᴏᴡ\x20ᴀʀᴇ\x20ʏᴏᴜ\x20ᴛᴏᴅᴀʏ?','374160lMCurS','356228pujvOS','./thumbnail.jpg','1019845zOpQQK','pdf','chat'];_0x2daf=function(){return _0x4c1076;};return _0x2daf();}const _0x110137=_0x13bb;(function(_0x14d3d7,_0x67b65e){const _0x3a56bf={_0x2e964c:0x1b0,_0x4fc539:0x1bd,_0x2a1845:0x1b1,_0x2b6724:0x1b3,_0x4293cc:0x1b8,_0x59080a:0x1b9},_0x30692c=_0x13bb,_0x119b1c=_0x14d3d7();while(!![]){try{const _0x181128=parseInt(_0x30692c(0x1bb))/0x1*(parseInt(_0x30692c(_0x3a56bf._0x2e964c))/0x2)+parseInt(_0x30692c(_0x3a56bf._0x4fc539))/0x3+parseInt(_0x30692c(_0x3a56bf._0x2a1845))/0x4+parseInt(_0x30692c(_0x3a56bf._0x2b6724))/0x5*(parseInt(_0x30692c(0x1bc))/0x6)+-parseInt(_0x30692c(0x1ad))/0x7+-parseInt(_0x30692c(0x1be))/0x8+parseInt(_0x30692c(_0x3a56bf._0x4293cc))/0x9*(-parseInt(_0x30692c(_0x3a56bf._0x59080a))/0xa);if(_0x181128===_0x67b65e)break;else _0x119b1c['push'](_0x119b1c['shift']());}catch(_0x1caf7d){_0x119b1c['push'](_0x119b1c['shift']());}}}(_0x2daf,0x235d2));function _0x13bb(_0x16c7de,_0x1a27b8){const _0x2dafbc=_0x2daf();return _0x13bb=function(_0x13bbaf,_0x156d41){_0x13bbaf=_0x13bbaf-0x1ad;let _0x1a2b8a=_0x2dafbc[_0x13bbaf];return _0x1a2b8a;},_0x13bb(_0x16c7de,_0x1a27b8);}let buttonMessage={'document':{'url':sgh},'mimetype':td,'fileName':global[_0x110137(0x1b6)],'fileLength':fsizedoc,'pageCount':fpagedoc,'contextInfo':{'externalAdReply':{'showAdAttribution':!![],'mediaType':0x1,'previewType':_0x110137(0x1b4),'title':_0x110137(0x1af),'thumbnail':fs[_0x110137(0x1ae)](_0x110137(0x1b2)),'renderLargerThumbnail':!![],'sourceUrl':global[_0x110137(0x1b7)]}},'caption':text['trim']()};await conn[_0x110137(0x1ba)](m[_0x110137(0x1b5)],buttonMessage,{'quoted':fkontak});
-    
-     //------------------- 2BUTTON LOCATION
-    /*conn.sendButton(m.chat, `${ucapan()}﹗`, text.trim(), `${timeimg()}`, [
-      ['🎏 ᴍᴇɴᴜ', `${_p}menu`],
-      ['⚡ sᴘᴇᴇᴅᴛᴇsᴛ', `${_p}speedtest`]
-    ], m, {asLocation: true}))*/
+        mentionedJid: [m.sender],
+        externalAdReply: {
+          showAdAttribution: true,
+          mediaType: 1,
+          title: `${namebot}`,
+          body: titlebot,
+          thumbnail: thumbBuffer,
+          renderLargerThumbnail: true,
+          sourceUrl: global.social || global.sgh
+        }
+      }
+    }, { quoted: fkontak })
   } catch (e) {
     conn.reply(m.chat, 'Sorry, the menu is in error', m)
     throw e

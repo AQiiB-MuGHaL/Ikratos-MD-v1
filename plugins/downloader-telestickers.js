@@ -1,4 +1,5 @@
-import { Telesticker } from 'xfarr-api'
+import xfarr from 'xfarr-api'
+const { Telesticker } = xfarr
 import { stickerTelegram } from '@bochilteam/scraper'
 
 let handler = async (m, { conn, args }) => {

@@ -1,4 +1,4 @@
-import { youtubedl, youtubedlv2, youtubedlv3 } from '@bochilteam/scraper'
+import { youtubedl, youtubedlv2 } from '@bochilteam/scraper'
 import fetch from 'node-fetch'
 let handler = async (m, { conn, args }) => {
 if (!args[0]) throw '*ENTRE THE LINK OF A YOUTUBE VIDEO*'
@@ -7,7 +7,7 @@ try {
 let qu = args[1] || '360'
 let q = qu + 'p'
 let v = args[0]
-const yt = await youtubedl(v).catch(async _ => await youtubedlv2(v)).catch(async _ => await youtubedlv3(v))
+const yt = await youtubedl(v).catch(async _ => await youtubedlv2(v))
 const dl_url = await yt.video[q].download()
 const ttl = await yt.title
 await await conn.sendMessage(m.chat, { document: { url: dl_url }, mimetype: 'video/mp4', fileName: ttl + `.mp4`}, {quoted: m})

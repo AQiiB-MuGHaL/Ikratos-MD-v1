@@ -1,6 +1,5 @@
 import fetch from 'node-fetch'
 import { sticker, addExif } from '../lib/sticker.js'
-import { Sticker } from 'wa-sticker-formatter'
 let handler = async(m, { conn, text, args, usedPrefix, command }) => {
 if (!text) throw `*[❗] where is the text*\n\n*—◉ 𝙴xample:*\n*◉ ${usedPrefix + command} Guru*`
 let teks = encodeURI(text)
@@ -37,8 +36,7 @@ handler.tags = ['sticker']
 export default handler
 
 async function createSticker(img, url, packName, authorName, quality) {
-let stickerMetadata = { type: 'full', pack: packName, author: authorName, quality }
-return (new Sticker(img ? img : url, stickerMetadata)).toBuffer()}
+return await sticker(img, url, packName, authorName)}
 async function mp4ToWebp(file, stickerMetadata) {
 if (stickerMetadata) {
 if (!stickerMetadata.pack) stickerMetadata.pack = '‎'

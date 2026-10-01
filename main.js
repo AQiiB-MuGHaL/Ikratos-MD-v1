@@ -97,18 +97,11 @@ global.loadDatabase = async function loadDatabase() {
     global.db.chain = chain(db.data)
 }
 loadDatabase()
-const useStore = !process.argv.includes('--use-store')
-const usePairingCode = !process.argv.includes('--use-pairing-code')
+const useStore = !process.argv.includes('--no-store')
+const usePairingCode = !process.argv.includes('--qr')
 const useMobile = process.argv.includes('--mobile')
 
-var question = function(text) {
-            return new Promise(function(resolve) {
-                rl.question(text, resolve);
-            });
-        };
-const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
-
-const store = useStore ? makeInMemoryStore({ level: 'silent' }) : undefined
+const store = (useStore && typeof makeInMemoryStore === 'function') ? makeInMemoryStore({ level: 'silent' }) : undefined
 
 store?.readFromFile('./ikratos_store.json')
 // save every 10s
@@ -116,13 +109,30 @@ setInterval(() => {
 	store?.writeToFile('./ikratos_store.json')
 }, 10_000)
 
-const { version, isLatest} = await fetchLatestBaileysVersion()
+const { version, isLatest } = await fetchLatestBaileysVersion()
 const { state, saveCreds } = await useMultiFileAuthState('./sessions')
+
+let pairingPhoneNumber = (process.env.PAIRING_NUMBER || opts['number'] || '').toString().replace(/\D/g, '')
+if (usePairingCode && !state.creds.registered && !pairingPhoneNumber) {
+	if (useMobile) throw new Error('Cannot use pairing code with mobile api')
+	const rl = readline.createInterface({ input: process.stdin, output: process.stdout })
+	const question = (text) => new Promise((resolve) => rl.question(text, resolve))
+	do {
+		const rawInput = await question(chalk.blueBright('Input a Valid number start with region code (e.g. 923xxxxxxxxx):\n'))
+		pairingPhoneNumber = (rawInput || '').replace(/\D/g, '')
+	} while (
+		!pairingPhoneNumber ||
+		pairingPhoneNumber.length < 10 ||
+		(PHONENUMBER_MCC && Object.keys(PHONENUMBER_MCC).length > 0 && !Object.keys(PHONENUMBER_MCC).some(v => pairingPhoneNumber.startsWith(v)))
+	)
+	rl.close()
+}
+
 const connectionOptions = {
         version,
         logger: pino({ level: 'silent' }), 
         printQRInTerminal: !usePairingCode, 
-        browser: ['Ikratos-MD', 'safari', '5.1.10'],
+        browser: ['Ubuntu', 'Chrome', '20.0.04'],
         auth: { 
          creds: state.creds, 
          keys: makeCacheableSignalKeyStore(state.keys, pino().child({ 
@@ -131,7 +141,7 @@ const connectionOptions = {
          })), 
      },
      getMessage: async key => {
-    		const messageData = await store.loadMessage(key.remoteJid, key.id);
+    		const messageData = await store?.loadMessage(key.remoteJid, key.id);
     		return messageData?.message || undefined;
 	},
   generateHighQualityLinkPreview: true, 
@@ -157,46 +167,50 @@ const connectionOptions = {
 
                 return message;
             }, 
-	connectTimeoutMs: 60000, defaultQueryTimeoutMs: 0, generateHighQualityLinkPreview: true, syncFullHistory: true, markOnlineOnConnect: true
+	connectTimeoutMs: 60000, defaultQueryTimeoutMs: 0, syncFullHistory: false, markOnlineOnConnect: true
 }
 
 global.conn = makeWASocket(connectionOptions)
 conn.isInit = false
+if (store) store.bind(conn.ev)
 
-if(usePairingCode && !conn.authState.creds.registered) {
-		if(useMobile) throw new Error('Cannot use pairing code with mobile api')
-		const { registration } = { registration: {} }
-		let phoneNumber = ''
-		do {
-			phoneNumber = await question(chalk.blueBright('Input a Valid number start with region code. Example : 62xxx:\n'))
-		} while (!Object.keys(PHONENUMBER_MCC).some(v => phoneNumber.startsWith(v)))
-		rl.close()
-		phoneNumber = phoneNumber.replace(/\D/g,'')
-		console.log(chalk.bgWhite(chalk.blue('Generating code...')))
-		setTimeout(async () => {
-			let code = await conn.requestPairingCode(phoneNumber)
+if (usePairingCode && !conn.authState.creds.registered && pairingPhoneNumber) {
+	console.log(chalk.bgWhite(chalk.blue('Generating Pairing Code...')))
+	setTimeout(async () => {
+		try {
+			let code = await conn.requestPairingCode(pairingPhoneNumber)
 			code = code?.match(/.{1,4}/g)?.join('-') || code
-			console.log(chalk.black(chalk.bgGreen(`Your Pairing Code : `)), chalk.black(chalk.white(code)))
-		}, 3000)
-	}
+			console.log(chalk.black(chalk.bgGreen(` Your Pairing Code : `)), chalk.bold.white(code))
+		} catch (err) {
+			console.error('Failed to request pairing code:', err)
+		}
+	}, 3000)
+}
 
 if (!opts['test']) {
   (await import('./server.js')).default(PORT)
   setInterval(async () => {
     if (global.db.data) await global.db.write().catch(console.error)
-   // if (opts['autocleartmp']) try {
+    try {
       clearTmp()
-  //  } catch (e) { console.error(e) }
+    } catch (e) { }
   }, 60 * 1000)
 }
 
 function clearTmp() {
   const tmp = [tmpdir(), join(__dirname, './tmp')]
   const filename = []
-  tmp.forEach(dirname => readdirSync(dirname).forEach(file => filename.push(join(dirname, file))))
+  tmp.forEach(dirname => {
+    if (!existsSync(dirname)) return
+    try {
+      readdirSync(dirname).forEach(file => filename.push(join(dirname, file)))
+    } catch {}
+  })
   return filename.map(file => {
-    const stats = statSync(file)
-    if (stats.isFile() && (Date.now() - stats.mtimeMs >= 1000 * 60 * 3)) return unlinkSync(file) // 3 minutes
+    try {
+      const stats = statSync(file)
+      if (stats.isFile() && (Date.now() - stats.mtimeMs >= 1000 * 60 * 3)) return unlinkSync(file) // 3 minutes
+    } catch {}
     return false
   })
 }

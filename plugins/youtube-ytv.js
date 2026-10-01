@@ -1,4 +1,4 @@
-import { youtubedlv2, youtubedlv3, youtubedl } from '@bochilteam/scraper'
+import { youtubedlv2, youtubedl } from '@bochilteam/scraper'
 
 const handler = async (m, { conn, args, command }) => {
   if (!args[0]) throw 'Where`s Url?'

@@ -60,15 +60,16 @@ try {
 👀 *Views:* ${viewH}
   `
   await	m.react('▶️') 
-  await conn.sendButton(m.chat, whmodsdev, wm, botdate, [
+  await conn.sendButton(m.chat, whmodsdev, wm, thumbnail, [
     ['🎶 Audio', `${usedPrefix}opta ${url} yes`],
     ['🎥 Video', `${usedPrefix}optv ${url} yes`],
     ['🔎 Youtube Search', `${usedPrefix}yts ${text}`]
-], m, fdoc)
+], m)
 } catch { try {
   if (!text) throw `Use example ${usedPrefix}${command} arcade`
   await conn.reply(m.chat, global.wait, m)
   const yt_play = await search(args.join(" "));
+  const url = yt_play[0].url;
   let ikratos1 = `*◉————⌈ PLAY ⌋————◉*\n
 📌 *Title:* ${yt_play[0].title}
 ⏲️ *Published:* ${yt_play[0].ago}
@@ -77,8 +78,10 @@ try {
 👤 *Author:* ${yt_play[0].author.name}
 ⏯️ *Chanal:* ${yt_play[0].author.url}
 🔗 *Url:* ${yt_play[0].url}`.trim();
-let buttons = [{ buttonText: { displayText: '🎶 Audio' }, buttonId: `${usedPrefix}opta ${url}` }, { buttonText: { displayText: '🎥 Video' }, buttonId: `${usedPrefix}optv ${url}` }] 
-let msg = await conn.sendMessage(m.chat, { image: { url: yt_play[0].image }, caption: ikratos1, footer: 'Follow me on instagram:\n\tinstagram.com/itx_ahmad.ali', buttons }, { quoted: m })
+  await conn.sendButton(m.chat, ikratos1, wm, yt_play[0].image, [
+    ['🎶 Audio', `${usedPrefix}opta ${url}`],
+    ['🎥 Video', `${usedPrefix}optv ${url}`]
+  ], m)
 } catch { try {
   let vid2 = await (await fetch(`https://api.lolhuman.xyz/api/ytsearch?apikey=${lolkeysapi}&query=${text}`)  ).json();
   let { videoId, title, views, published, thumbnail } = await vid2.result[0];
