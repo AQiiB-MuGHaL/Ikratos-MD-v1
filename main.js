@@ -34,14 +34,14 @@ import readline from 'readline'
 import { format } from 'util'
 import pino from 'pino'
 import ws from 'ws'
-import {
+import baileys, {
     useMultiFileAuthState,
     DisconnectReason,
     fetchLatestBaileysVersion, 
     makeInMemoryStore, 
-    makeCacheableSignalKeyStore, 
-    PHONENUMBER_MCC
+    makeCacheableSignalKeyStore
     } from '@adiwajshing/baileys'
+const { PHONENUMBER_MCC } = baileys
 import { Low, JSONFile } from 'lowdb'
 import { makeWASocket, protoType, serialize } from './lib/simple.js'
 import {
@@ -109,7 +109,33 @@ setInterval(() => {
 	store?.writeToFile('./ikratos_store.json')
 }, 10_000)
 
-const { version, isLatest } = await fetchLatestBaileysVersion()
+async function getLatestWaVersion() {
+	const fallbackVersion = [2, 3000, 1043857760]
+	try {
+		const res = await fetch('https://web.whatsapp.com/sw.js', {
+			headers: {
+				'sec-fetch-site': 'none',
+				'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
+			}
+		})
+		if (res.ok) {
+			const text = await res.text()
+			const match = text.match(/\\?"client_revision\\?":\s*(\d+)/)
+			if (match?.[1]) return { version: [2, 3000, +match[1]], isLatest: true }
+		}
+	} catch {}
+	try {
+		const res = await fetch('https://raw.githubusercontent.com/WhiskeySockets/Baileys/master/src/Defaults/index.ts')
+		if (res.ok) {
+			const text = await res.text()
+			const match = text.match(/const version = \[(\d+),\s*(\d+),\s*(\d+)\]/)
+			if (match) return { version: [+match[1], +match[2], +match[3]], isLatest: true }
+		}
+	} catch {}
+	return { version: fallbackVersion, isLatest: false }
+}
+
+const { version, isLatest } = await getLatestWaVersion()
 const { state, saveCreds } = await useMultiFileAuthState('./sessions')
 
 let pairingPhoneNumber = (process.env.PAIRING_NUMBER || opts['number'] || '').toString().replace(/\D/g, '')
@@ -174,17 +200,21 @@ global.conn = makeWASocket(connectionOptions)
 conn.isInit = false
 if (store) store.bind(conn.ev)
 
-if (usePairingCode && !conn.authState.creds.registered && pairingPhoneNumber) {
+let pairingCodeRequested = false
+let isReconnecting = false
+
+async function requestPairingIfNeeded() {
+	if (!usePairingCode || conn.authState.creds.registered || !pairingPhoneNumber || pairingCodeRequested) return
+	pairingCodeRequested = true
 	console.log(chalk.bgWhite(chalk.blue('Generating Pairing Code...')))
-	setTimeout(async () => {
-		try {
-			let code = await conn.requestPairingCode(pairingPhoneNumber)
-			code = code?.match(/.{1,4}/g)?.join('-') || code
-			console.log(chalk.black(chalk.bgGreen(` Your Pairing Code : `)), chalk.bold.white(code))
-		} catch (err) {
-			console.error('Failed to request pairing code:', err)
-		}
-	}, 3000)
+	try {
+		let code = await conn.requestPairingCode(pairingPhoneNumber)
+		code = code?.match(/.{1,4}/g)?.join('-') || code
+		console.log(chalk.black(chalk.bgGreen(` Your Pairing Code : `)), chalk.bold.white(code))
+	} catch (err) {
+		pairingCodeRequested = false
+		console.error('Failed to request pairing code:', err?.message || err)
+	}
 }
 
 if (!opts['test']) {
@@ -229,22 +259,31 @@ function clearSessions(folder = 'sessions') {
 }
 
 async function connectionUpdate(update) {
-    const { receivedPendingNotifications, connection, lastDisconnect, isOnline, isNewLogin } = update;
+    const { receivedPendingNotifications, connection, lastDisconnect, isOnline, isNewLogin, qr } = update;
 
     if (isNewLogin) {
         conn.isInit = true;
     }
 
+    if (qr && usePairingCode && !conn.authState.creds.registered && pairingPhoneNumber) {
+        await requestPairingIfNeeded();
+    }
+
     if (connection == 'connecting') {
         console.log(chalk.redBright('⚡ Activating bot please wait a moment...'));
+        if (usePairingCode && !conn.authState.creds.registered && pairingPhoneNumber) {
+            setTimeout(async () => {
+                if (conn.ws?.isOpen) await requestPairingIfNeeded();
+            }, 3000);
+        }
     } else if (connection == 'open') {
         console.log(chalk.green('✅ Connected'));
     }
 
     if (isOnline == true) {
-        console.log(chalk.green('Status Active'));
+        console.log(chalk.green('Status Active'));
     } else if (isOnline == false) {
-        console.log(chalk.red('Status Dead'));
+        console.log(chalk.red('Status Dead'));
     }
 
     if (receivedPendingNotifications) {
@@ -252,13 +291,21 @@ async function connectionUpdate(update) {
     }
 
     if (connection == 'close') {
+        pairingCodeRequested = false;
         console.log(chalk.red('⏱️ disconnected & trying to reconnect ...'));
     }
 
     global.timestamp.connect = new Date;
 
-    if (lastDisconnect && lastDisconnect.error && lastDisconnect.error.output && lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut && conn.ws.readyState !== CONNECTING) {
-        console.log(await global.reloadHandler(true));
+    if (lastDisconnect && lastDisconnect.error && lastDisconnect.error.output && lastDisconnect.error.output.statusCode !== DisconnectReason.loggedOut && !conn.ws?.isConnecting && !isReconnecting) {
+        isReconnecting = true;
+        setTimeout(async () => {
+            try {
+                console.log(await global.reloadHandler(true));
+            } finally {
+                isReconnecting = false;
+            }
+        }, 3000);
     }
 
     if (global.db.data == null) {
@@ -267,6 +314,7 @@ async function connectionUpdate(update) {
 }
 
 process.on('uncaughtException', console.error)
+process.on('unhandledRejection', console.error)
 // let strQuot = /(["'])(?:(?=(\\?))\2.)*?\1/
 
 let isInit = true
@@ -286,9 +334,10 @@ global.reloadHandler = async function (restatConn) {
     }
     if (restatConn) {
         const oldChats = global.conn.chats
-        try { global.conn.ws.close() } catch { }
         conn.ev.removeAllListeners()
+        try { global.conn.ws.close() } catch { }
         global.conn = makeWASocket(connectionOptions, { chats: oldChats })
+        if (store) store.bind(global.conn.ev)
         isInit = true
     }    
   if (!isInit) {
